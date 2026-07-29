@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mini Scanner</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Mini Scanner</p>
+          <h1 id="pair">BTCUSDT</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="status-pill" id="serviceStatus">Connecting</span>
+          <button id="refreshButton" type="button" aria-label="Refresh data" title="Refresh data">
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <section class="summary-grid" aria-label="Spread summary">
+        <div class="metric">
+          <span class="metric-label">Spread</span>
+          <strong id="spreadPercent">--</strong>
+          <span id="spreadState" class="metric-note">Waiting for quotes</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Buy</span>
+          <strong id="buyExchange">--</strong>
+          <span id="buyAsk" class="metric-note">Ask --</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Sell</span>
+          <strong id="sellExchange">--</strong>
+          <span id="sellBid" class="metric-note">Bid --</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Threshold</span>
+          <strong id="threshold">--</strong>
+          <span id="updatedAt" class="metric-note">Last update --</span>
+        </div>
+      </section>
+
+      <section class="exchange-grid" id="exchangeGrid" aria-label="Exchange quotes"></section>
+
+      <section class="details-band">
+        <div>
+          <span class="metric-label">Raw endpoint</span>
+          <a href="/spread">/spread</a>
+        </div>
+        <div>
+          <span class="metric-label">Stale after</span>
+          <strong id="staleAfter">--</strong>
+        </div>
+        <div>
+          <span class="metric-label">Fresh exchanges</span>
+          <strong id="freshCount">0</strong>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
