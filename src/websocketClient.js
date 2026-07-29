@@ -27,6 +27,7 @@ export class ExchangeWebSocketClient {
     this.onClose = onClose;
     this.now = now;
     this.WebSocketImpl = WebSocketImpl;
+
     this.reconnectAttempt = 0;
     this.closedByUser = false;
     this.socket = null;
@@ -40,12 +41,17 @@ export class ExchangeWebSocketClient {
 
   stop() {
     this.closedByUser = true;
+
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
 
     if (this.socket) {
+      this.logger.info('websocket_stopped', {
+        exchange: this.exchange
+      });
+
       this.socket.close();
       this.socket = null;
     }
@@ -61,16 +67,24 @@ export class ExchangeWebSocketClient {
     this.socket = socket;
 
     socket.addEventListener('open', () => {
+      const wasReconnect = this.reconnectAttempt > 0;
+
       this.reconnectAttempt = 0;
-      this.logger.info('websocket_connected', {
-        exchange: this.exchange
-      });
+
+      this.logger.info(
+        wasReconnect ? 'websocket_reconnected' : 'websocket_connected',
+        {
+          exchange: this.exchange
+        }
+      );
+
       this.onOpen?.(socket);
     });
 
     socket.addEventListener('message', (event) => {
       try {
         const quote = this.parseMessage(event.data, this.now());
+
         if (quote) {
           this.onQuote(quote);
         }
@@ -95,6 +109,7 @@ export class ExchangeWebSocketClient {
         code: event.code,
         reason: event.reason || undefined
       });
+
       this.onClose?.(event);
       this.scheduleReconnect();
     });
@@ -105,14 +120,23 @@ export class ExchangeWebSocketClient {
       return;
     }
 
+    const attempt = this.reconnectAttempt + 1;
     const delayMs = this.nextDelayMs();
+
     this.logger.info('websocket_reconnect_scheduled', {
       exchange: this.exchange,
+      attempt,
       delayMs
     });
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
+
+      this.logger.info('websocket_reconnecting', {
+        exchange: this.exchange,
+        attempt
+      });
+
       this.connect();
     }, delayMs);
   }
@@ -120,8 +144,10 @@ export class ExchangeWebSocketClient {
   nextDelayMs() {
     const exponential = this.reconnectMinMs * 2 ** this.reconnectAttempt;
     this.reconnectAttempt += 1;
+
     const capped = Math.min(exponential, this.reconnectMaxMs);
     const jitter = Math.round(capped * 0.2 * Math.random());
+
     return capped + jitter;
   }
 }
