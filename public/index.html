@@ -21,30 +21,45 @@
         </div>
       </header>
 
-      <section class="summary-grid" aria-label="Spread summary">
-        <div class="metric">
-          <span class="metric-label">Spread</span>
+      <section class="summary-panel" aria-label="Spread summary">
+        <div class="spread-main">
+          <span class="metric-label">Current spread</span>
           <strong id="spreadPercent">--</strong>
           <span id="spreadState" class="metric-note">Waiting for quotes</span>
         </div>
-        <div class="metric">
-          <span class="metric-label">Buy</span>
-          <strong id="buyExchange">--</strong>
-          <span id="buyAsk" class="metric-note">Ask --</span>
-        </div>
-        <div class="metric">
-          <span class="metric-label">Sell</span>
-          <strong id="sellExchange">--</strong>
-          <span id="sellBid" class="metric-note">Bid --</span>
-        </div>
-        <div class="metric">
-          <span class="metric-label">Threshold</span>
-          <strong id="threshold">--</strong>
-          <span id="updatedAt" class="metric-note">Last update --</span>
+        <div class="summary-details">
+          <div>
+            <span class="metric-label">Buy</span>
+            <strong id="buyExchange">--</strong>
+            <span id="buyAsk" class="metric-note">Ask --</span>
+          </div>
+          <div>
+            <span class="metric-label">Sell</span>
+            <strong id="sellExchange">--</strong>
+            <span id="sellBid" class="metric-note">Bid --</span>
+          </div>
+          <div>
+            <span class="metric-label">Threshold</span>
+            <strong id="threshold">--</strong>
+            <span id="updatedAt" class="metric-note">Last update --</span>
+          </div>
         </div>
       </section>
 
-      <section class="exchange-grid" id="exchangeGrid" aria-label="Exchange quotes"></section>
+      <section class="table-panel" aria-label="Exchange quotes">
+        <table>
+          <thead>
+            <tr>
+              <th>Exchange</th>
+              <th>Bid</th>
+              <th>Ask</th>
+              <th>Age</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="exchangeRows"></tbody>
+        </table>
+      </section>
 
       <section class="details-band">
         <div>

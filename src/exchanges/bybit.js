@@ -4,6 +4,7 @@ const PING_INTERVAL_MS = 20_000;
 
 export function createBybitClient({ pair, logger, reconnectMinMs, reconnectMaxMs, onQuote }) {
   const symbol = pair.toUpperCase();
+  let lastQuote = null;
   let pingTimer = null;
   const clearPingTimer = () => {
     if (pingTimer) {
@@ -19,7 +20,13 @@ export function createBybitClient({ pair, logger, reconnectMinMs, reconnectMaxMs
     reconnectMinMs,
     reconnectMaxMs,
     onQuote,
-    parseMessage: (raw, receivedAt) => parseBybitTicker(raw, receivedAt),
+    parseMessage: (raw, receivedAt) => {
+      const quote = parseBybitTicker(raw, receivedAt, lastQuote);
+      if (quote) {
+        lastQuote = quote;
+      }
+      return quote;
+    },
     onOpen: (socket) => {
       socket.send(JSON.stringify({ op: 'subscribe', args: [`tickers.${symbol}`] }));
       pingTimer = setInterval(() => {
@@ -40,15 +47,15 @@ export function createBybitClient({ pair, logger, reconnectMinMs, reconnectMaxMs
   return client;
 }
 
-export function parseBybitTicker(raw, receivedAt = Date.now()) {
+export function parseBybitTicker(raw, receivedAt = Date.now(), previousQuote = null) {
   const message = JSON.parse(raw);
   if (!message.topic?.startsWith('tickers.') || !message.data) {
     return null;
   }
 
   const data = Array.isArray(message.data) ? message.data[0] : message.data;
-  const bid = Number(data.bid1Price);
-  const ask = Number(data.ask1Price);
+  const bid = data.bid1Price === undefined ? previousQuote?.bid : Number(data.bid1Price);
+  const ask = data.ask1Price === undefined ? previousQuote?.ask : Number(data.ask1Price);
 
   if (!data.symbol || !Number.isFinite(bid) || !Number.isFinite(ask)) {
     return null;

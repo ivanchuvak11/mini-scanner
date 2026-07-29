@@ -23,6 +23,13 @@ npm test
 npm start
 ```
 
+На Windows у PowerShell може знадобитися запуск через `npm.cmd`:
+
+```powershell
+npm.cmd test
+npm.cmd start
+```
+
 За замовчуванням сервіс слухає `http://localhost:3000`.
 
 Візуальна панель доступна тут:

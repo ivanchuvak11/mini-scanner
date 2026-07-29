@@ -10,7 +10,7 @@ const elements = {
   sellBid: document.querySelector('#sellBid'),
   threshold: document.querySelector('#threshold'),
   updatedAt: document.querySelector('#updatedAt'),
-  exchangeGrid: document.querySelector('#exchangeGrid'),
+  exchangeRows: document.querySelector('#exchangeRows'),
   staleAfter: document.querySelector('#staleAfter'),
   freshCount: document.querySelector('#freshCount')
 };
@@ -56,9 +56,9 @@ function render(snapshot) {
 }
 
 function renderSpread(spread) {
-  const metric = elements.spreadPercent.closest('.metric');
-  metric.classList.toggle('alert', Boolean(spread.thresholdExceeded));
-  metric.classList.toggle('ready', Boolean(spread.available && !spread.thresholdExceeded));
+  const panel = elements.spreadPercent.closest('.summary-panel');
+  panel.classList.toggle('alert', Boolean(spread.thresholdExceeded));
+  panel.classList.toggle('ready', Boolean(spread.available && !spread.thresholdExceeded));
 
   if (!spread.available) {
     elements.spreadPercent.textContent = '--';
@@ -79,44 +79,29 @@ function renderSpread(spread) {
 }
 
 function renderQuotes(quotes) {
-  elements.exchangeGrid.replaceChildren(...knownExchanges.map((exchange) => {
+  elements.exchangeRows.replaceChildren(...knownExchanges.map((exchange) => {
     const quote = quotes[exchange];
-    const card = document.createElement('article');
-    card.className = 'quote-card';
+    const row = document.createElement('tr');
 
     if (!quote) {
-      card.innerHTML = `
-        <div class="quote-head">
-          <h2>${titleCase(exchange)}</h2>
-          <span class="quote-status bad">No data</span>
-        </div>
-        <div class="quote-prices">
-          <div class="price-box"><span class="metric-label">Bid</span><strong>--</strong></div>
-          <div class="price-box"><span class="metric-label">Ask</span><strong>--</strong></div>
-        </div>
-        <div class="quote-meta">
-          <span>Symbol --</span>
-          <span>Age --</span>
-        </div>
+      row.innerHTML = `
+        <td>${titleCase(exchange)} <span class="muted">--</span></td>
+        <td>--</td>
+        <td>--</td>
+        <td class="muted">--</td>
+        <td><span class="quote-status bad">No data</span></td>
       `;
-      return card;
+      return row;
     }
 
-    card.innerHTML = `
-      <div class="quote-head">
-        <h2>${titleCase(exchange)}</h2>
-        <span class="quote-status ${quote.fresh ? 'ok' : 'bad'}">${quote.fresh ? 'Fresh' : 'Stale'}</span>
-      </div>
-      <div class="quote-prices">
-        <div class="price-box"><span class="metric-label">Bid</span><strong>${formatPrice(quote.bid)}</strong></div>
-        <div class="price-box"><span class="metric-label">Ask</span><strong>${formatPrice(quote.ask)}</strong></div>
-      </div>
-      <div class="quote-meta">
-        <span>Symbol ${quote.symbol}</span>
-        <span>Age ${formatAge(quote.ageMs)}</span>
-      </div>
+    row.innerHTML = `
+      <td>${titleCase(exchange)} <span class="muted">${quote.symbol}</span></td>
+      <td>${formatPrice(quote.bid)}</td>
+      <td>${formatPrice(quote.ask)}</td>
+      <td class="muted">${formatAge(quote.ageMs)}</td>
+      <td><span class="quote-status ${quote.fresh ? 'ok' : 'bad'}">${quote.fresh ? 'Fresh' : 'Stale'}</span></td>
     `;
-    return card;
+    return row;
   }));
 }
 
