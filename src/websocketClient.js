@@ -69,8 +69,6 @@ export class ExchangeWebSocketClient {
     socket.addEventListener('open', () => {
       const wasReconnect = this.reconnectAttempt > 0;
 
-      this.reconnectAttempt = 0;
-
       this.logger.info(
         wasReconnect ? 'websocket_reconnected' : 'websocket_connected',
         {
@@ -86,6 +84,9 @@ export class ExchangeWebSocketClient {
         const quote = this.parseMessage(event.data, this.now());
 
         if (quote) {
+          if (this.reconnectAttempt > 0) {
+            this.reconnectAttempt = 0;
+          }
           this.onQuote(quote);
         }
       } catch (error) {

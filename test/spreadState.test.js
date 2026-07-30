@@ -105,3 +105,63 @@ test('fresh quote after stale state participates in spread again', () => {
   assert.equal(snapshot.spread.available, true);
   assert.equal(logger.entries.filter((entry) => entry.event === 'quote_fresh_again').length, 2);
 });
+
+test('triggers threshold logging on updateQuote without calling getSnapshot', () => {
+  let now = 1_000;
+  const logger = createMemoryLogger();
+  const state = new SpreadState({
+    pair: 'BTCUSDT',
+    staleAfterMs: 10_000,
+    thresholdPercent: 0.3,
+    logger,
+    now: () => now
+  });
+
+  state.updateQuote({ exchange: 'binance', symbol: 'BTCUSDT', bid: 100, ask: 101, receivedAt: now });
+  state.updateQuote({ exchange: 'bybit', symbol: 'BTCUSDT', bid: 103, ask: 104, receivedAt: now });
+
+  assert.equal(logger.entries.filter((entry) => entry.event === 'spread_threshold_exceeded').length, 1);
+});
+
+test('triggers stale logging during evaluate tick without calling getSnapshot', () => {
+  let now = 1_000;
+  const logger = createMemoryLogger();
+  const state = new SpreadState({
+    pair: 'BTCUSDT',
+    staleAfterMs: 500,
+    thresholdPercent: 0.3,
+    logger,
+    now: () => now
+  });
+
+  state.updateQuote({ exchange: 'binance', symbol: 'BTCUSDT', bid: 100, ask: 101, receivedAt: now });
+  state.updateQuote({ exchange: 'bybit', symbol: 'BTCUSDT', bid: 103, ask: 104, receivedAt: now });
+  now = 1_700;
+
+  state.evaluate();
+
+  assert.equal(logger.entries.filter((entry) => entry.event === 'quote_stale').length, 2);
+});
+
+test('guarantees buy and sell are on different exchanges', () => {
+  let now = 1_000;
+  const logger = createMemoryLogger();
+  const state = new SpreadState({
+    pair: 'BTCUSDT',
+    staleAfterMs: 10_000,
+    thresholdPercent: 0.3,
+    logger,
+    now: () => now
+  });
+
+  state.updateQuote({ exchange: 'binance', symbol: 'BTCUSDT', bid: 105, ask: 100, receivedAt: now });
+  state.updateQuote({ exchange: 'bybit', symbol: 'BTCUSDT', bid: 99, ask: 104, receivedAt: now });
+
+  const snapshot = state.getSnapshot();
+
+  assert.equal(snapshot.spread.available, true);
+  assert.notEqual(snapshot.spread.buyExchange, snapshot.spread.sellExchange);
+  assert.equal(snapshot.spread.buyExchange, 'bybit');
+  assert.equal(snapshot.spread.sellExchange, 'binance');
+});
+

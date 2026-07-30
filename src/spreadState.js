@@ -7,6 +7,23 @@ export class SpreadState {
     this.now = now;
     this.quotes = new Map();
     this.alertKey = null;
+    this.currentSnapshot = null;
+    this.timer = null;
+  }
+
+  startStaleCheck(intervalMs = 1000) {
+    if (this.timer) return;
+    this.timer = setInterval(() => this.evaluate(), intervalMs);
+    if (this.timer.unref) {
+      this.timer.unref();
+    }
+  }
+
+  stopStaleCheck() {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
   }
 
   updateQuote(quote) {
@@ -31,9 +48,11 @@ export class SpreadState {
         symbol: normalized.symbol
       });
     }
+
+    this.evaluate();
   }
 
-  getSnapshot() {
+  evaluate() {
     const now = this.now();
     const quotes = {};
     const freshQuotes = [];
@@ -70,7 +89,7 @@ export class SpreadState {
 
     const spread = this.calculateSpread(freshQuotes);
 
-    return {
+    this.currentSnapshot = {
       pair: this.pair,
       now: new Date(now).toISOString(),
       staleAfterSeconds: this.staleAfterMs / 1000,
@@ -78,7 +97,28 @@ export class SpreadState {
       quotes,
       spread
     };
+
+    return this.currentSnapshot;
   }
+
+  getSnapshot() {
+  if (!this.currentSnapshot) {
+    return {
+      pair: this.pair,
+      now: new Date(this.now()).toISOString(),
+      staleAfterSeconds: this.staleAfterMs / 1000,
+      thresholdPercent: this.thresholdPercent,
+      quotes: {},
+      spread: {
+        available: false,
+        reason: 'not_enough_fresh_quotes',
+        freshExchanges: []
+      }
+    };
+  }
+
+  return this.currentSnapshot;
+}
 
   calculateSpread(freshQuotes) {
     if (freshQuotes.length < 2) {
@@ -90,9 +130,32 @@ export class SpreadState {
       };
     }
 
-    const buy = freshQuotes.reduce((best, quote) => (quote.ask < best.ask ? quote : best));
-    const sell = freshQuotes.reduce((best, quote) => (quote.bid > best.bid ? quote : best));
-    const percent = ((sell.bid - buy.ask) / buy.ask) * 100;
+    let bestPair = null;
+    let maxPercent = -Infinity;
+
+    for (const buyCandidate of freshQuotes) {
+      for (const sellCandidate of freshQuotes) {
+        if (buyCandidate.exchange === sellCandidate.exchange) {
+          continue;
+        }
+        const percent = ((sellCandidate.bid - buyCandidate.ask) / buyCandidate.ask) * 100;
+        if (percent > maxPercent) {
+          maxPercent = percent;
+          bestPair = { buy: buyCandidate, sell: sellCandidate, percent };
+        }
+      }
+    }
+
+    if (!bestPair) {
+      this.alertKey = null;
+      return {
+        available: false,
+        reason: 'not_enough_fresh_quotes',
+        freshExchanges: freshQuotes.map((quote) => quote.exchange)
+      };
+    }
+
+    const { buy, sell, percent } = bestPair;
     const thresholdExceeded = percent >= this.thresholdPercent;
 
     if (thresholdExceeded) {

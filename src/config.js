@@ -82,8 +82,16 @@ function validateConfig(config) {
     throw new Error('PAIR must not be empty');
   }
 
+  if (config.port < 1 || config.port > 65535) {
+    throw new Error('PORT must be between 1 and 65535');
+  }
+
   if (config.exchanges.length !== 2) {
     throw new Error('Exactly two exchanges must be configured');
+  }
+
+  if (new Set(config.exchanges).size !== config.exchanges.length) {
+    throw new Error('Exchanges must be distinct');
   }
 
   const supported = new Set(['binance', 'bybit']);
@@ -91,6 +99,10 @@ function validateConfig(config) {
     if (!supported.has(exchange)) {
       throw new Error(`Unsupported exchange: ${exchange}`);
     }
+  }
+
+  if (config.spreadThresholdPercent < 0) {
+    throw new Error('SPREAD_THRESHOLD_PERCENT must be non-negative');
   }
 
   if (config.staleAfterMs <= 0) {

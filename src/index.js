@@ -15,6 +15,7 @@ const state = new SpreadState({
   thresholdPercent: config.spreadThresholdPercent,
   logger
 });
+state.startStaleCheck(1000);
 
 const factories = {
   binance: createBinanceClient,
@@ -44,6 +45,7 @@ server.listen(config.port, () => {
 
 const shutdown = () => {
   logger.info('service_stopping');
+  state.stopStaleCheck();
   for (const client of clients) {
     client.stop();
   }
