@@ -49,6 +49,7 @@ test('does not calculate spread with a stale quote', () => {
   state.updateQuote({ exchange: 'binance', symbol: 'BTCUSDT', bid: 100, ask: 101, receivedAt: now });
   state.updateQuote({ exchange: 'bybit', symbol: 'BTCUSDT', bid: 103, ask: 104, receivedAt: now });
   now = 1_700;
+  state.evaluate();
 
   const snapshot = state.getSnapshot();
 
@@ -93,6 +94,7 @@ test('fresh quote after stale state participates in spread again', () => {
   state.updateQuote({ exchange: 'binance', symbol: 'BTCUSDT', bid: 100, ask: 101, receivedAt: now });
   state.updateQuote({ exchange: 'bybit', symbol: 'BTCUSDT', bid: 103, ask: 104, receivedAt: now });
   now = 1_700;
+  state.evaluate();
   state.getSnapshot();
 
   state.updateQuote({ exchange: 'binance', symbol: 'BTCUSDT', bid: 100, ask: 101, receivedAt: now });
